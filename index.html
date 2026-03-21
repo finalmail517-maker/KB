@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Knowledge Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#09090b;--bg1:#0f0f12;--bg2:#141418;--bg3:#1c1c22;--bg4:#242429;
+  --border:#ffffff0f;--border2:#ffffff18;--border3:#ffffff28;
+  --accent:#e8d5b0;--accent2:#c9b89a;--accent-dim:#e8d5b015;--accent-glow:#e8d5b008;
+  --blue:#4f8eff;--blue-dim:#4f8eff18;
+  --green:#3ecf8e;--green-dim:#3ecf8e15;
+  --red:#f87171;--amber:#f59e0b;
+  --text:#f4f4f5;--text2:#a1a1aa;--text3:#52525b;--text4:#3f3f46;
+  --serif:'Instrument Serif',Georgia,serif;
+  --sans:'Geist',system-ui,sans-serif;
+  --mono:'Geist Mono',monospace;
+  --r:8px;--r2:12px;--r3:16px;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg)}
+body{font-family:var(--sans);color:var(--text);font-size:14px;line-height:1.5}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+.app{display:flex;height:100vh;overflow:hidden}
+
+/* ── SIDEBAR ── */
+.sidebar{width:240px;min-width:240px;background:var(--bg1);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;transition:width .22s cubic-bezier(.4,0,.2,1),min-width .22s;position:relative;z-index:10}
+.sidebar.collapsed{width:52px;min-width:52px}
+.logo{padding:20px 16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.logo-mark{width:28px;height:28px;min-width:28px;border-radius:7px;border:1px solid var(--border3);background:var(--bg3);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:15px;color:var(--accent);flex-shrink:0}
+.logo-text{font-family:var(--serif);font-size:17px;color:var(--text);white-space:nowrap;overflow:hidden}
+.logo-text em{font-style:italic;color:var(--accent)}
+.sidebar.collapsed .logo-text{opacity:0;width:0}
+.new-btn{margin:12px 10px 8px;padding:9px 12px;background:var(--accent-dim);border:1px solid var(--border2);border-radius:var(--r2);color:var(--accent);font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:8px;transition:border-color .15s;white-space:nowrap;flex-shrink:0}
+.new-btn:hover{border-color:var(--accent2)}
+.sidebar.collapsed .new-btn span{display:none}
+.sidebar.collapsed .new-btn{justify-content:center;padding:9px}
+.sb-sec{padding:16px 14px 6px;font-size:10px;font-weight:500;letter-spacing:.8px;text-transform:uppercase;color:var(--text4);white-space:nowrap;overflow:hidden;flex-shrink:0}
+.sidebar.collapsed .sb-sec{opacity:0}
+.session-list{flex:1;overflow-y:auto;padding:0 8px 8px}
+.s-item{padding:8px 8px;border-radius:var(--r);cursor:pointer;display:flex;align-items:center;gap:9px;transition:background .12s;margin-bottom:1px;min-height:38px}
+.s-item:hover{background:var(--bg3)}.s-item.active{background:var(--bg4)}
+.s-icon{width:24px;height:24px;min-width:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;background:var(--blue-dim);color:var(--blue)}
+.s-meta{flex:1;min-width:0}
+.s-name{font-size:12.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.s-sub{font-size:11px;color:var(--text3);margin-top:1px}
+.sidebar.collapsed .s-meta{display:none}
+.sb-footer{padding:12px 10px;border-top:1px solid var(--border);display:flex;align-items:center;gap:9px;flex-shrink:0}
+.avatar{width:28px;height:28px;min-width:28px;border-radius:50%;background:var(--bg4);border:1px solid var(--border3);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--accent);flex-shrink:0}
+.u-name{font-size:12.5px;font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sidebar.collapsed .u-name,.sidebar.collapsed .u-plan{display:none}
+.u-plan{font-size:10px;color:var(--text3)}
+.sb-toggle{position:absolute;top:50%;transform:translateY(-50%);right:-12px;z-index:20;width:22px;height:22px;background:var(--bg3);border:1px solid var(--border2);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);font-size:10px;transition:background .12s}
+.sb-toggle:hover{background:var(--bg4)}
+
+/* ── MAIN ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{height:52px;min-height:52px;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px;background:var(--bg1);flex-shrink:0}
+.topbar-title{flex:1;font-size:13.5px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar-title strong{color:var(--text);font-weight:500}
+.t-badge{display:flex;align-items:center;gap:5px;padding:4px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:20px;font-size:11.5px;color:var(--text2);white-space:nowrap;transition:opacity .2s}
+.live-dot{width:5px;height:5px;border-radius:50%;background:var(--green)}
+.ib{width:30px;height:30px;border-radius:var(--r);border:1px solid var(--border);background:none;color:var(--text3);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;transition:all .12s;flex-shrink:0}
+.ib:hover{background:var(--bg3);color:var(--text);border-color:var(--border2)}
+.panels{flex:1;display:flex;overflow:hidden}
+
+/* ── SOURCE PANEL (left) ── */
+.src-panel{width:270px;min-width:270px;background:var(--bg1);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;transition:width .22s cubic-bezier(.4,0,.2,1),min-width .22s}
+.src-panel.collapsed{width:44px;min-width:44px}
+.src-panel.expanded{width:400px;min-width:400px}
+.ph{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;min-height:44px;flex-shrink:0}
+.ph-title{font-size:12px;font-weight:500;color:var(--text2);white-space:nowrap;overflow:hidden;flex:1}
+.ph-btns{display:flex;gap:4px;flex-shrink:0}
+.ph-btn{width:22px;height:22px;border-radius:5px;border:1px solid var(--border);background:none;color:var(--text3);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:10px;transition:all .12s}
+.ph-btn:hover{background:var(--bg3);color:var(--text);border-color:var(--border2)}
+.src-panel.collapsed .ph-title,.src-panel.collapsed .ph-btns{display:none}
+.cstrip{display:none;flex-direction:column;align-items:center;padding:14px 0;gap:5px;flex:1;cursor:pointer}
+.src-panel.collapsed .cstrip,.sv-panel.collapsed .cstrip{display:flex}
+.src-panel.collapsed .pbody,.sv-panel.collapsed .pbody{display:none}
+.vlabel{writing-mode:vertical-lr;transform:rotate(180deg);font-size:10.5px;color:var(--text4);letter-spacing:.5px;white-space:nowrap}
+.pbody{flex:1;overflow-y:auto;padding:14px 12px}
+
+/* url input row */
+.url-row{display:flex;gap:6px;margin-bottom:10px}
+.url-inp{flex:1;padding:7px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-family:var(--mono);font-size:11.5px;outline:none;transition:border-color .12s}
+.url-inp::placeholder{color:var(--text4)}.url-inp:focus{border-color:var(--accent2)}
+.url-go{padding:7px 11px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text2);font-family:var(--sans);font-size:12px;cursor:pointer;white-space:nowrap;transition:all .12s}
+.url-go:hover{border-color:var(--accent2);color:var(--accent)}
+
+/* drop zone */
+.dropz{border:1px dashed var(--border2);border-radius:var(--r2);padding:14px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;margin-bottom:10px}
+.dropz:hover,.dropz.drag-over{border-color:var(--accent2);background:var(--accent-glow)}
+.dz-t{font-size:12.5px;font-weight:500;color:var(--text2);margin-bottom:3px}
+.dz-s{font-size:11px;color:var(--text4)}
+
+/* source file items */
+.sf{display:flex;align-items:center;gap:9px;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);margin-bottom:6px}
+.sf-ic{width:26px;height:26px;min-width:26px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px}
+.ic-v{background:var(--blue-dim);color:var(--blue)}.ic-p{background:rgba(248,113,113,.12);color:var(--red)}.ic-a{background:var(--green-dim);color:var(--green)}
+.sf-m{flex:1;min-width:0}
+.sf-n{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
+.sf-s{font-size:10.5px;color:var(--text3);margin-top:2px}
+.sf-tag{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:500;white-space:nowrap}
+.tag-ok{background:var(--green-dim);color:var(--green)}
+.tag-pr{background:rgba(245,158,11,.12);color:var(--amber)}
+.tag-err{background:rgba(248,113,113,.12);color:var(--red)}
+.pbar{height:2px;background:var(--border);border-radius:2px;margin-top:5px;overflow:hidden}
+.pfill{height:100%;background:var(--accent2);border-radius:2px;animation:ppulse 1.8s ease-in-out infinite}
+@keyframes ppulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* process button */
+.process-btn{width:100%;padding:9px;background:var(--accent-dim);border:1px solid var(--border2);border-radius:var(--r);color:var(--accent);font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;transition:border-color .15s,opacity .15s;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:7px}
+.process-btn:hover{border-color:var(--accent2)}
+.process-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* tip */
+.tip{font-size:11px;color:var(--text4);margin-top:10px;line-height:1.5;padding:8px 10px;background:var(--bg3);border-radius:var(--r);border:1px solid var(--border)}
+
+/* ── CHAT AREA ── */
+.chat-area{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.chat-inner{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* new session card */
+.nsc{margin:20px 28px 0;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r3);overflow:hidden;animation:fadein .25s ease;flex-shrink:0}
+.nsc-top{padding:16px 18px 14px;border-bottom:1px solid var(--border)}
+.nsc-label{font-size:10.5px;font-weight:500;letter-spacing:.7px;text-transform:uppercase;color:var(--text4);margin-bottom:10px}
+.nsc-row{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);padding:5px 5px 5px 14px;transition:border-color .15s}
+.nsc-row:focus-within{border-color:var(--accent2)}
+.nsc-ic{font-size:13px;opacity:.35;flex-shrink:0}
+.nsc-inp{flex:1;border:none;background:none;outline:none;font-family:var(--sans);font-size:13.5px;color:var(--text);padding:8px 0}
+.nsc-inp::placeholder{color:var(--text4)}
+.nsc-go{padding:9px 18px;background:var(--accent);color:var(--bg);border:none;border-radius:10px;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;transition:opacity .12s;white-space:nowrap;flex-shrink:0}
+.nsc-go:hover{opacity:.85}
+.nsc-bottom{padding:10px 18px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.nsc-or{font-size:11.5px;color:var(--text4)}
+.nsc-upload{display:flex;align-items:center;gap:6px;padding:5px 11px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);font-family:var(--sans);font-size:12px;color:var(--text2);cursor:pointer;transition:border-color .12s,color .12s}
+.nsc-upload:hover{border-color:var(--accent2);color:var(--accent)}
+.nsc-plats{display:flex;gap:5px;flex-wrap:wrap;margin-left:auto}
+.nsc-plat{display:flex;align-items:center;gap:4px;padding:3px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;font-size:11px;color:var(--text3)}
+.pdot{width:5px;height:5px;border-radius:50%}
+
+/* processing bar */
+.proc-bar{margin:12px 28px 0;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:11px 16px;display:flex;align-items:center;gap:14px;animation:fadein .2s ease;flex-shrink:0}
+.psteps{display:flex;align-items:center;gap:8px;flex:1;flex-wrap:wrap}
+.psi{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text3)}
+.psi.done{color:var(--green)}.psi.active{color:var(--accent)}
+.psep{color:var(--text4);font-size:10px}
+.spin{display:inline-block;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* empty state */
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:40px 32px}
+.es-icon{font-size:24px;opacity:.12;margin-bottom:4px}
+.es-title{font-family:var(--serif);font-size:20px;color:var(--text3);letter-spacing:-.2px;text-align:center}
+.es-sub{font-size:13px;color:var(--text4);text-align:center;max-width:340px;line-height:1.6}
+
+/* messages */
+.chat-msgs{flex:1;overflow-y:auto;padding:20px 28px 16px;display:flex;flex-direction:column;gap:20px}
+.status-pill{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);font-size:12.5px;color:var(--text2);animation:fadein .3s ease}
+.sp-ic{font-size:13px;margin-top:1px;flex-shrink:0}
+.msg{display:flex;gap:10px;max-width:820px;animation:fadein .25s ease}
+.msg.user{flex-direction:row-reverse;align-self:flex-end}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.msg-av{width:28px;height:28px;min-width:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;margin-top:2px;flex-shrink:0}
+.ai-av{background:var(--bg4);border:1px solid var(--border2);color:var(--accent);font-family:var(--serif)}
+.user-av2{background:var(--bg3);border:1px solid var(--border2);color:var(--text2)}
+.msg-body{max-width:calc(100% - 38px)}
+.msg-who{font-size:10.5px;font-weight:500;color:var(--text4);margin-bottom:5px;letter-spacing:.4px;text-transform:uppercase}
+.msg.user .msg-who{text-align:right}
+.bubble{padding:11px 15px;font-size:13.5px;line-height:1.65}
+.ai-bub{background:var(--bg2);border:1px solid var(--border);border-radius:3px 12px 12px 12px;color:var(--text)}
+.user-bub{background:var(--bg3);border:1px solid var(--border2);border-radius:12px 3px 12px 12px;color:var(--text)}
+
+/* answer sections inside bubble */
+.ans-section{margin-bottom:10px}
+.ans-section:last-child{margin-bottom:0}
+.ans-label{font-size:10.5px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;margin-bottom:6px}
+.ans-label.video{color:var(--blue)}
+.ans-label.kb{color:var(--accent2)}
+.ans-body{font-size:13px;line-height:1.65;color:var(--text)}
+.ans-meta{margin-top:6px;padding:6px 10px;background:var(--bg3);border-radius:var(--r);font-size:11.5px;color:var(--text3);border-left:2px solid var(--border2)}
+.ans-meta strong{color:var(--text2)}
+.ans-divider{border:none;border-top:1px solid var(--border);margin:10px 0}
+.ans-empty{font-size:13px;color:var(--text4);font-style:italic}
+
+/* citation chips */
+.cite-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+.cite{display:flex;align-items:center;gap:5px;padding:3px 9px;background:var(--bg3);border:1px solid var(--border2);border-radius:20px;font-size:11px;color:var(--text3);cursor:pointer;transition:border-color .12s,color .12s}
+.cite:hover{border-color:var(--accent2);color:var(--accent)}
+.cite-ts{font-family:var(--mono);font-size:10px;color:var(--accent2);font-weight:500}
+
+/* typing */
+.typing-wrap{display:flex;gap:10px;animation:fadein .25s ease}
+.typing-bub{padding:12px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:3px 12px 12px 12px;display:flex;align-items:center;gap:5px}
+.td{width:6px;height:6px;border-radius:50%;background:var(--text4);animation:tbounce 1.3s ease infinite}
+.td:nth-child(2){animation-delay:.18s}.td:nth-child(3){animation-delay:.36s}
+@keyframes tbounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-5px)}}
+
+/* input bar — always visible */
+.input-area{padding:14px 20px 18px;border-top:1px solid var(--border);background:var(--bg1);flex-shrink:0}
+.input-wrap{display:flex;align-items:flex-end;gap:8px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r3);padding:10px 10px 10px 16px;transition:border-color .15s}
+.input-wrap:focus-within{border-color:var(--accent2)}
+.chat-inp{flex:1;background:none;border:none;outline:none;font-family:var(--sans);font-size:13.5px;color:var(--text);resize:none;line-height:1.5;max-height:120px;min-height:22px}
+.chat-inp::placeholder{color:var(--text4)}
+.inp-acts{display:flex;align-items:center;gap:5px}
+.inp-ic{width:30px;height:30px;border-radius:var(--r);border:1px solid var(--border);background:none;color:var(--text3);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;transition:all .12s}
+.inp-ic:hover{background:var(--bg3);color:var(--text2)}
+.send-btn{width:32px;height:32px;border-radius:var(--r);background:var(--accent);border:none;color:var(--bg);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;transition:opacity .12s}
+.send-btn:hover{opacity:.8}
+.send-btn:disabled{opacity:.35;cursor:not-allowed}
+.inp-hint{padding:5px 16px 0;font-size:11px;color:var(--text4);display:flex;gap:12px}
+kbd{background:var(--bg3);border:1px solid var(--border2);border-radius:4px;padding:1px 5px;font-family:var(--mono);font-size:10px}
+
+/* ── SOURCE VIEWER (right) ── */
+.sv-panel{width:260px;min-width:260px;background:var(--bg1);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;transition:width .22s cubic-bezier(.4,0,.2,1),min-width .22s}
+.sv-panel.collapsed{width:44px;min-width:44px}
+.sv-panel.expanded{width:380px;min-width:380px}
+.sv-panel.collapsed .ph-title,.sv-panel.collapsed .ph-btns{display:none}
+.chunk{padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);margin-bottom:7px;cursor:pointer;border-left:2px solid var(--accent2);transition:background .12s}
+.chunk:hover{background:var(--bg4)}
+.chunk.video-chunk{border-left-color:var(--blue)}
+.chunk.kb-chunk{border-left-color:var(--accent2)}
+.ck-label{font-size:9px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--text4);margin-bottom:4px}
+.ck-ts{font-family:var(--mono);font-size:10px;color:var(--accent2);margin-bottom:4px;font-weight:500}
+.chunk.video-chunk .ck-ts{color:var(--blue)}
+.ck-txt{font-size:12px;color:var(--text2);line-height:1.5}
+.sv-empty{padding:20px 14px;font-size:12px;color:var(--text4);text-align:center;line-height:1.6}
+
+/* toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--bg4);border:1px solid var(--border2);border-radius:var(--r2);padding:10px 18px;font-size:13px;color:var(--text2);z-index:999;animation:fadein .2s ease;pointer-events:none}
+.toast.error{border-color:var(--red);color:var(--red)}
+.toast.success{border-color:var(--green);color:var(--green)}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ══ SIDEBAR ══ -->
+  <div class="sidebar" id="sidebar">
+    <button class="sb-toggle" id="sb-toggle" onclick="toggleSidebar()">◀</button>
+    <div class="logo">
+      <div class="logo-mark">K</div>
+      <div class="logo-text">Knowledge <em>Explorer</em></div>
+    </div>
+
+    <!-- New Chat — calls POST /api/session/new -->
+    <button class="new-btn" onclick="newSession()">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v11M1 6.5h11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <span>New Chat</span>
+    </button>
+
+    <div class="sb-sec">Recent chats</div>
+    <div class="session-list" id="session-list">
+      <div style="padding:10px;font-size:12px;color:var(--text4)">Loading…</div>
+    </div>
+
+    <div class="sb-footer">
+      <div class="avatar">K</div>
+      <div style="flex:1;min-width:0">
+        <div class="u-name">Knowledge Explorer</div>
+        <div class="u-plan">Local instance</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MAIN ══ -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="topbar-title">
+        <strong id="sess-name">Knowledge Explorer</strong>
+        <span id="sess-sep" style="color:var(--text3)"> · </span>
+        <span id="sess-sub" style="color:var(--text2)">Upload files or paste a URL to begin</span>
+      </div>
+      <div class="t-badge" id="src-badge" style="opacity:.4">
+        <div class="live-dot"></div>
+        <span id="src-count">No index</span>
+      </div>
+      <button class="ib" title="More">⋯</button>
+    </div>
+
+    <div class="panels">
+
+      <!-- ══ SOURCE PANEL (left) ══ -->
+      <div class="src-panel" id="src-panel">
+        <div class="ph">
+          <span class="ph-title">📎 Upload &amp; Process</span>
+          <div class="ph-btns">
+            <button class="ph-btn" id="src-exp-btn" onclick="expandSrcPanel()">⤢</button>
+            <button class="ph-btn" id="src-col-btn" onclick="toggleSrcPanel()">◀</button>
+          </div>
+        </div>
+        <div class="cstrip" onclick="toggleSrcPanel()">
+          <span style="font-size:12px;color:var(--text4)">📎</span>
+          <span class="vlabel">Upload</span>
+        </div>
+        <div class="pbody">
+
+          <!-- URL input — queues to pending_urls, processed on Process click -->
+          <div style="font-size:10.5px;color:var(--text4);margin-bottom:6px;letter-spacing:.5px;text-transform:uppercase">Video / Podcast URL</div>
+          <div class="url-row">
+            <input class="url-inp" id="url-input" type="text" placeholder="Paste YouTube or video URL…" onkeydown="if(event.key==='Enter')queueUrl()"/>
+            <button class="url-go" onclick="queueUrl()">Add</button>
+          </div>
+
+          <!-- PDF / TXT drop zone -->
+          <div style="font-size:10.5px;color:var(--text4);margin-bottom:6px;letter-spacing:.5px;text-transform:uppercase">PDF / TXT Files</div>
+          <div class="dropz" id="pdf-dropzone">
+            <div class="dz-t">Drop PDF or TXT here</div>
+            <div class="dz-s">or click to browse</div>
+          </div>
+          <input type="file" id="file-pdf" accept=".pdf,.txt" multiple class="hidden" onchange="uploadFiles(this,'pdf')"/>
+
+          <!-- Video / Audio drop zone -->
+          <div style="font-size:10.5px;color:var(--text4);margin-bottom:6px;letter-spacing:.5px;text-transform:uppercase">Video / Audio Files</div>
+          <div class="dropz" id="video-dropzone">
+            <div class="dz-t">Drop video or audio here</div>
+            <div class="dz-s">mp4 · mkv · mp3 · wav · m4a…</div>
+          </div>
+          <input type="file" id="file-video" accept=".mp4,.mkv,.avi,.mov,.webm,.m4v,.mp3,.wav,.aac,.flac,.m4a" multiple class="hidden" onchange="uploadFiles(this,'video')"/>
+
+          <!-- queued / uploaded file list -->
+          <div id="file-list"></div>
+
+          <!-- Process button — calls POST /api/process -->
+          <button class="process-btn" id="process-btn" onclick="runProcess()" disabled>
+            <span id="process-btn-label">⚡ Process</span>
+          </button>
+
+          <div class="tip">
+            Click <strong>Process</strong> only when adding new files — existing knowledge is reused automatically.
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ CHAT AREA ══ -->
+      <div class="chat-area">
+        <div class="chat-inner">
+
+          <!-- NEW SESSION CARD -->
+          <div class="nsc hidden" id="nsc">
+            <div class="nsc-top">
+              <div class="nsc-label">Add a new source — or just ask below</div>
+              <div class="nsc-row" id="nsc-row">
+                <span class="nsc-ic">🔗</span>
+                <input class="nsc-inp" id="nsc-inp" type="text"
+                  placeholder="Paste a YouTube, video or podcast URL…"
+                  onkeydown="if(event.key==='Enter')queueUrlFromCard()"/>
+                <button class="nsc-go" onclick="queueUrlFromCard()">Add →</button>
+              </div>
+            </div>
+            <div class="nsc-bottom">
+              <span class="nsc-or">or</span>
+              <button class="nsc-upload" onclick="document.getElementById('file-pdf').click()">📄 PDF / TXT</button>
+              <button class="nsc-upload" onclick="document.getElementById('file-video').click()">🎬 Video / Audio</button>
+              <div class="nsc-plats">
+                <div class="nsc-plat"><div class="pdot" style="background:#ff3b30"></div>YouTube</div>
+                <div class="nsc-plat"><div class="pdot" style="background:#888"></div>MP4/MP3</div>
+                <div class="nsc-plat"><div class="pdot" style="background:#f87171"></div>PDF/TXT</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PROCESSING BAR (shown while /api/process runs) -->
+          <div class="proc-bar hidden" id="proc-bar">
+            <div class="psteps">
+              <span class="psi" id="pi1">Transcribing</span>
+              <span class="psep">›</span>
+              <span class="psi" id="pi2">Indexing docs</span>
+              <span class="psep">›</span>
+              <span class="psi" id="pi3">Indexing video</span>
+              <span class="psep">›</span>
+              <span class="psi" id="pi4">Ready</span>
+            </div>
+            <span id="proc-pct" style="font-size:11px;color:var(--text4);font-family:var(--mono)"></span>
+          </div>
+
+          <!-- EMPTY STATE -->
+          <div class="empty-state hidden" id="empty-state">
+            <div class="es-icon">◎</div>
+            <div class="es-title">Ready when you are</div>
+            <div class="es-sub">Previous knowledge base is still loaded — ask anything, or upload new files on the left.</div>
+          </div>
+
+          <!-- MESSAGES -->
+          <div class="chat-msgs" id="chat-msgs"></div>
+
+        </div>
+
+        <!-- INPUT BAR — always visible -->
+        <div class="input-area">
+          <div class="input-wrap">
+            <textarea class="chat-inp" id="chat-inp" rows="1"
+              placeholder="Ask your question…"
+              onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+            <div class="inp-acts">
+              <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
+            </div>
+          </div>
+          <div class="inp-hint">
+            <span><kbd>Enter</kbd> send</span>
+            <span><kbd>Shift+Enter</kbd> newline</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ SOURCE VIEWER (right) ══ -->
+      <div class="sv-panel" id="sv-panel">
+        <div class="ph">
+          <span class="ph-title">Source Context</span>
+          <div class="ph-btns">
+            <button class="ph-btn" id="sv-exp-btn" onclick="expandSvPanel()">⤢</button>
+            <button class="ph-btn" id="sv-col-btn" onclick="toggleSvPanel()">▶</button>
+          </div>
+        </div>
+        <div class="cstrip" onclick="toggleSvPanel()">
+          <span style="font-size:11px;color:var(--text4)">◧</span>
+          <span class="vlabel">Context</span>
+        </div>
+        <div class="pbody" id="sv-body">
+          <div class="sv-empty">Source context will appear here after your first question.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- hidden file inputs -->
+<input type="file" id="file-pdf-card" accept=".pdf,.txt" multiple class="hidden" onchange="uploadFiles(this,'pdf')"/>
+
+<script>
+// ════════════════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════════════════
+let currentSessionId = null;
+let pendingFiles     = [];      // files queued but not yet processed
+let isBusy           = false;
+let sidebarCollapsed = false;
+let srcPanelState    = 'normal';
+let svPanelState     = 'normal';
+
+
+// ════════════════════════════════════════════════════════════
+//  BOOT — create a default session + load sidebar history
+// ════════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', async () => {
+  setupDropZones();
+  await createSession();      // always start with a fresh session
+  await loadSidebarHistory();
+});
+
+async function createSession() {
+  try {
+    // ── POST /api/session/new ──────────────────────────────
+    const res  = await fetch('/api/session/new', { method: 'POST' });
+    const data = await res.json();
+    currentSessionId = data.session_id;
+
+    if (data.has_index) {
+      document.getElementById('src-badge').style.opacity = '1';
+      document.getElementById('src-count').textContent   = 'Index loaded';
+      addStatusMsg('Existing knowledge base loaded — ask anything, or add new sources on the left.');
+    } else {
+      document.getElementById('nsc').classList.remove('hidden');
+      document.getElementById('empty-state').classList.remove('hidden');
+    }
+  } catch(e) {
+    showToast('Could not connect to server', 'error');
+  }
+}
+
+async function loadSidebarHistory() {
+  try {
+    // ── GET /api/sessions ─────────────────────────────────
+    const res      = await fetch('/api/sessions');
+    const sessions = await res.json();
+    const list     = document.getElementById('session-list');
+    list.innerHTML = '';
+
+    if (!sessions.length) {
+      list.innerHTML = `<div style="padding:10px;font-size:12px;color:var(--text4)">No previous chats.</div>`;
+      return;
+    }
+
+    sessions.forEach(s => {
+      const div = document.createElement('div');
+      div.className = 's-item' + (s.session_id === currentSessionId ? ' active' : '');
+      div.dataset.id = s.session_id;
+      div.onclick = () => loadSessionMessages(div, s.session_id, s.title);
+      div.innerHTML = `
+        <div class="s-icon">💬</div>
+        <div class="s-meta">
+          <div class="s-name">${s.title}</div>
+          <div class="s-sub">${s.msg_count} question${s.msg_count !== 1 ? 's' : ''}</div>
+        </div>`;
+      list.appendChild(div);
+    });
+  } catch(e) { /* sidebar is non-critical */ }
+}
+
+
+// ════════════════════════════════════════════════════════════
+//  NEW SESSION (sidebar "New Chat" button)
+//  mirrors app.py: st.button("New Chat")
+// ════════════════════════════════════════════════════════════
+async function newSession() {
+  document.querySelectorAll('.s-item').forEach(i => i.classList.remove('active'));
+  document.getElementById('chat-msgs').innerHTML  = '';
+  document.getElementById('proc-bar').classList.add('hidden');
+  document.getElementById('empty-state').classList.remove('hidden');
+  document.getElementById('nsc').classList.remove('hidden');
+  document.getElementById('file-list').innerHTML  = '';
+  document.getElementById('process-btn').disabled = true;
+  pendingFiles = [];
+
+  document.getElementById('sess-name').textContent = 'New Chat';
+  document.getElementById('sess-sub').textContent  = 'Upload files or paste a URL to continue';
+  document.getElementById('src-badge').style.opacity = '0.4';
+
+  await createSession();
+  await loadSidebarHistory();
+  setTimeout(() => document.getElementById('nsc-inp').focus(), 80);
+}
+
+
+// ════════════════════════════════════════════════════════════
+//  LOAD OLD SESSION (click in sidebar)
+// ════════════════════════════════════════════════════════════
+async function loadSessionMessages(el, sessionId, title) {
+  document.querySelectorAll('.s-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+  currentSessionId = sessionId;
+
+  document.getElementById('chat-msgs').innerHTML = '';
+  document.getElementById('nsc').classList.add('hidden');
+  document.getElementById('empty-state').classList.add('hidden');
+  document.getElementById('sess-name').textContent = title;
+  document.getElementById('sess-sub').textContent  = 'From history';
+  document.getElementById('src-badge').style.opacity = '1';
+  document.getElementById('src-count').textContent   = 'Index loaded';
+
+  try {
+    // ── GET /api/sessions/:id/messages ────────────────────
+    const res  = await fetch(`/api/sessions/${sessionId}/messages`);
+    const msgs = await res.json();
+    msgs.forEach(m => {
+      if (m.role === 'user')      addUserMsg(m.content);
+      else                        renderAIBubble(m.content, [], false);
+    });
+  } catch(e) {
+    addStatusMsg('Could not load previous messages.');
+  }
+}
+
+
+// ════════════════════════════════════════════════════════════
+//  QUEUE URL  (both from card and from panel)
+// ════════════════════════════════════════════════════════════
+async function queueUrl() {
+  const url = document.getElementById('url-input').value.trim();
+  if (!url) return;
+  await _queueUrl(url);
+  document.getElementById('url-input').value = '';
+}
+
+async function queueUrlFromCard() {
+  const url = document.getElementById('nsc-inp').value.trim();
+  if (!url) { shakeEl('nsc-row'); return; }
+  document.getElementById('nsc').classList.add('hidden');
+  document.getElementById('empty-state').classList.add('hidden');
+  await _queueUrl(url);
+  addStatusMsg(`URL queued: <strong>${url.slice(0, 60)}${url.length > 60 ? '…' : ''}</strong> — click ⚡ Process to transcribe.`);
+}
+
+async function _queueUrl(url) {
+  try {
+    // ── POST /api/upload/url ──────────────────────────────
+    await fetch('/api/upload/url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: currentSessionId, url }),
+    });
+    addFileRow({ name: url.slice(0, 40) + (url.length > 40 ? '…' : ''), type: 'url', status: 'queued' });
+  } catch(e) {
+    showToast('Could not queue URL', 'error');
+  }
+}
+
+
+// ════════════════════════════════════════════════════════════
+//  UPLOAD FILES
+// ════════════════════════════════════════════════════════════
+async function uploadFiles(input, kind) {
+  document.getElementById('nsc').classList.add('hidden');
+  document.getElementById('empty-state').classList.add('hidden');
+
+  for (const file of input.files) {
+    const row = addFileRow({ name: file.name, type: kind, status: 'uploading' });
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      // ── POST /api/upload/file ─────────────────────────
+      const res = await fetch(`/api/upload/file?session_id=${currentSessionId}`, {
+        method: 'POST', body: form,
+      });
+      if (!res.ok) throw new Error((await res.json()).detail);
+      updateFileRow(row, 'queued');
+      pendingFiles.push(file.name);
+    } catch(e) {
+      updateFileRow(row, 'error');
+      showToast(`Upload failed: ${file.name}`, 'error');
+    }
+  }
+  document.getElementById('process-btn').disabled = false;
+  input.value = '';
+}
+
+
+// ════════════════════════════════════════════════════════════
+//  PROCESS  (the big Process button → POST /api/process)
+//  mirrors app.py: if st.button("Process")
+// ════════════════════════════════════════════════════════════
+async function runProcess() {
+  if (isBusy) return;
+  setBusy(true);
+
+  document.getElementById('proc-bar').classList.remove('hidden');
+  animateProcBar();
+
+  try {
+    // ── POST /api/process ─────────────────────────────────
+    const res  = await fetch(`/api/process?session_id=${currentSessionId}`, { method: 'POST' });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Processing failed');
+    }
+    const data = await res.json();
+
+    document.getElementById('proc-bar').classList.add('hidden');
+    document.getElementById('src-badge').style.opacity = '1';
+    document.getElementById('src-count').textContent   =
+      `${data.indexed_pdfs} doc${data.indexed_pdfs !== 1 ? 's' : ''} · ${data.indexed_videos} video${data.indexed_videos !== 1 ? 's' : ''}`;
+
+    // mark all queued files as ready
+    document.querySelectorAll('.sf-tag.tag-pr').forEach(t => {
+      t.textContent = 'Ready'; t.className = 'sf-tag tag-ok';
+    });
+
+    addStatusMsg(`✓ ${data.message}`);
+    document.getElementById('process-btn').disabled = true;
+    pendingFiles = [];
+
+  } catch(e) {
+    document.getElementById('proc-bar').classList.add('hidden');
+    showToast(e.message, 'error');
+  } finally {
+    setBusy(false);
+  }
+}
+
+
+// ════════════════════════════════════════════════════════════
+//  SEND MESSAGE  →  POST /api/ask
+//  mirrors app.py: if user_q: ... get_combined_answer(...)
+// ════════════════════════════════════════════════════════════
+async function sendMessage() {
+  const inp  = document.getElementById('chat-inp');
+  const text = inp.value.trim();
+  if (!text || isBusy) return;
+
+  document.getElementById('empty-state').classList.add('hidden');
+  addUserMsg(text);
+  inp.value = ''; inp.style.height = '';
+  setBusy(true);
+  showTyping();
+
+  try {
+    // ── POST /api/ask ─────────────────────────────────────
+    const res  = await fetch('/api/ask', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ session_id: currentSessionId, question: text }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Could not get answer');
+    }
+
+    const data = await res.json();
+    // data = { answer, has_video, has_kb, sources }
+
+    renderAIBubble(data.answer, data.sources, true);
+    renderSourceChunks(data.sources, data.has_video, data.has_kb);
+    await loadSidebarHistory();   // refresh recent chats
+
+  } catch(e) {
+    removeTyping();
+    showToast(e.message, 'error');
+  } finally {
+    setBusy(false);
+  }
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+function autoResize(el) {
+  el.style.height = ''; el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+
+// ════════════════════════════════════════════════════════════
+//  RENDER HELPERS
+// ════════════════════════════════════════════════════════════
+
+function addStatusMsg(html) {
+  const c = document.getElementById('chat-msgs');
+  const d = document.createElement('div');
+  d.className = 'status-pill';
+  d.innerHTML = `<span class="sp-ic">⚡</span><span>${html}</span>`;
+  c.appendChild(d); c.scrollTop = c.scrollHeight;
+}
+
+function addUserMsg(text) {
+  const c = document.getElementById('chat-msgs');
+  const d = document.createElement('div');
+  d.className = 'msg user';
+  d.innerHTML = `
+    <div class="msg-av user-av2">U</div>
+    <div class="msg-body">
+      <div class="msg-who">You</div>
+      <div class="bubble user-bub">${escHtml(text)}</div>
+    </div>`;
+  c.appendChild(d); c.scrollTop = c.scrollHeight;
+}
+
+// Renders the structured answer from get_combined_answer
+// (has_video / has_kb sections with timestamps + sources)
+function renderAIBubble(rawAnswer, sources, animate) {
+  removeTyping();
+  const c = document.getElementById('chat-msgs');
+
+  // build cite chips from sources
+  const citeHtml = sources.length
+    ? `<div class="cite-row">${sources.map(s =>
+        `<div class="cite"><span class="cite-ts">${escHtml(s.ref)}</span>${escHtml(s.text.slice(0,30))}${s.text.length > 30 ? '…' : ''}</div>`
+      ).join('')}</div>`
+    : '';
+
+  // parse the markdown-ish answer into structured sections
+  const bubbleContent = renderAnswerSections(rawAnswer);
+
+  const d = document.createElement('div');
+  d.className = 'msg' + (animate ? '' : '');
+  d.innerHTML = `
+    <div class="msg-av ai-av">K</div>
+    <div class="msg-body">
+      <div class="msg-who">Knowledge Explorer</div>
+      <div class="bubble ai-bub">${bubbleContent}</div>
+      ${citeHtml}
+    </div>`;
+  c.appendChild(d); c.scrollTop = c.scrollHeight;
+}
+
+// Converts the markdown answer (with ### headers) into styled sections
+function renderAnswerSections(md) {
+  // Split on the --- divider your app.py produces
+  const parts = md.split(/\n---\n/);
+  const out   = [];
+
+  parts.forEach(part => {
+    part = part.trim();
+    if (!part) return;
+
+    const isVideo = part.startsWith('**From Video**') || part.includes('**From Video**');
+    const isKB    = part.startsWith('**From Knowledge Base**') || part.includes('**From Knowledge Base**');
+    const labelClass = isVideo ? 'video' : isKB ? 'kb' : '';
+    const label      = isVideo ? 'From Video' : isKB ? 'From Knowledge Base' : '';
+
+    // strip the bold header
+    let body = part
+      .replace(/\*\*From Video\*\*/g, '')
+      .replace(/\*\*From Knowledge Base\*\*/g, '')
+      .trim();
+
+    // extract > meta lines
+    const metaLines = [];
+    body = body.replace(/^> (.+)$/gm, (_, line) => { metaLines.push(line); return ''; }).trim();
+
+    const metaHtml = metaLines.length
+      ? `<div class="ans-meta">${metaLines.map(l =>
+          l.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        ).join('<br>')}</div>`
+      : '';
+
+    const isEmpty = body.includes('_No relevant content') || body.includes('No relevant content');
+
+    out.push(`
+      <div class="ans-section">
+        ${label ? `<div class="ans-label ${labelClass}">${label}</div>` : ''}
+        ${isEmpty
+          ? `<div class="ans-empty">${body.replace(/_/g,'')}</div>`
+          : `<div class="ans-body">${mdToHtml(body)}</div>${metaHtml}`
+        }
+      </div>`);
+  });
+
+  return out.join('<hr class="ans-divider"/>');
+}
+
+// Minimal markdown → html (bold, italic, newlines)
+function mdToHtml(s) {
+  return s
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,     '<em>$1</em>')
+    .replace(/\n/g,            '<br>');
+}
+
+function renderSourceChunks(sources, hasVideo, hasKB) {
+  const body = document.getElementById('sv-body');
+  if (!sources || !sources.length) {
+    body.innerHTML = `<div class="sv-empty">No source chunks returned.</div>`;
+    return;
+  }
+  body.innerHTML = `<div style="font-size:11px;color:var(--text4);margin-bottom:10px;letter-spacing:.4px;text-transform:uppercase">Matched sources · ${sources.length}</div>`;
+  sources.forEach(s => {
+    const isVideo = hasVideo && sources.indexOf(s) === 0;
+    const div     = document.createElement('div');
+    div.className = `chunk ${isVideo ? 'video-chunk' : 'kb-chunk'}`;
+    div.innerHTML = `
+      <div class="ck-label">${isVideo ? 'Video' : 'Document'}</div>
+      <div class="ck-ts">${escHtml(s.ref)}</div>
+      ${s.text ? `<div class="ck-txt">${escHtml(s.text)}</div>` : ''}`;
+    body.appendChild(div);
+  });
+}
+
+function addFileRow(f) {
+  const list = document.getElementById('file-list');
+  const div  = document.createElement('div');
+  div.className = 'sf';
+  const icCls = f.type === 'url' ? 'ic-v' : f.type === 'video' ? 'ic-v' : 'ic-p';
+  const icTxt = f.type === 'url' ? '▶'  : f.type === 'video'  ? '▶'  : '■';
+  const tagHtml = f.status === 'uploading'
+    ? `<span class="sf-tag tag-pr">Uploading…</span>`
+    : `<span class="sf-tag tag-pr">Queued</span>`;
+  div.innerHTML = `
+    <div class="sf-ic ${icCls}">${icTxt}</div>
+    <div class="sf-m">
+      <div class="sf-n">${escHtml(f.name)}</div>
+      <div class="sf-s">${f.type}</div>
+      ${f.status === 'uploading' ? `<div class="pbar"><div class="pfill" style="width:60%"></div></div>` : ''}
+    </div>${tagHtml}`;
+  list.appendChild(div);
+  document.getElementById('process-btn').disabled = false;
+  return div;
+}
+
+function updateFileRow(row, status) {
+  const tag = row.querySelector('.sf-tag');
+  const bar = row.querySelector('.pbar');
+  if (bar) bar.remove();
+  if (status === 'queued') { tag.textContent = 'Queued'; tag.className = 'sf-tag tag-pr'; }
+  if (status === 'error')  { tag.textContent = 'Error';  tag.className = 'sf-tag tag-err'; }
+  if (status === 'ready')  { tag.textContent = 'Ready';  tag.className = 'sf-tag tag-ok'; }
+}
+
+function showTyping() {
+  removeTyping();
+  const c = document.getElementById('chat-msgs');
+  const d = document.createElement('div');
+  d.className = 'typing-wrap'; d.id = 'typing-indicator';
+  d.innerHTML = `<div class="msg-av ai-av">K</div><div class="typing-bub"><div class="td"></div><div class="td"></div><div class="td"></div></div>`;
+  c.appendChild(d); c.scrollTop = c.scrollHeight;
+}
+function removeTyping() { const t = document.getElementById('typing-indicator'); if (t) t.remove(); }
+
+
+// ════════════════════════════════════════════════════════════
+//  PROCESS BAR ANIMATION (fake steps — real work is in Python)
+// ════════════════════════════════════════════════════════════
+function animateProcBar() {
+  const ids    = ['pi1','pi2','pi3','pi4'];
+  const labels = ['Transcribing','Indexing docs','Indexing video','Ready'];
+  ids.forEach((id,i) => { const el=document.getElementById(id); el.className='psi'; el.textContent=labels[i]; });
+  // steps advance purely on time; the real blocking is the fetch above
+  [0,0].forEach((_,i) => {
+    setTimeout(() => {
+      if(i>0){ const p=document.getElementById(ids[i-1]); p.className='psi done'; p.textContent='✓ '+labels[i-1]; }
+      const c=document.getElementById(ids[i]); c.className='psi active'; c.innerHTML=`<span class="spin">◌</span> ${labels[i]}`;
+    }, i*1200);
+  });
+}
+
+
+// ════════════════════════════════════════════════════════════
+//  UTILITY
+// ════════════════════════════════════════════════════════════
+function setBusy(v) {
+  isBusy = v;
+  document.getElementById('send-btn').disabled    = v;
+  document.getElementById('process-btn').disabled = v;
+}
+function shakeEl(id) {
+  const el = document.getElementById(id);
+  el.style.borderColor = 'var(--red)';
+  setTimeout(() => el.style.borderColor = '', 1200);
+}
+function showToast(msg, type='') {
+  const t = document.createElement('div');
+  t.className = `toast ${type}`; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function setupDropZones() {
+  [['pdf-dropzone','file-pdf'],['video-dropzone','file-video']].forEach(([zid,fid]) => {
+    const dz = document.getElementById(zid);
+    dz.addEventListener('click',   () => document.getElementById(fid).click());
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+    dz.addEventListener('dragleave',  () => dz.classList.remove('drag-over'));
+    dz.addEventListener('drop', async e => {
+      e.preventDefault(); dz.classList.remove('drag-over');
+      const fake = { files: e.dataTransfer.files };
+      const kind = fid.includes('video') ? 'video' : 'pdf';
+      await uploadFiles(fake, kind);
+    });
+  });
+}
+
+// ── PANEL CONTROLS ──────────────────────────────────────────
+function toggleSidebar() {
+  sidebarCollapsed = !sidebarCollapsed;
+  document.getElementById('sidebar').classList.toggle('collapsed', sidebarCollapsed);
+  document.getElementById('sb-toggle').textContent = sidebarCollapsed ? '▶' : '◀';
+}
+function toggleSrcPanel() {
+  const p=document.getElementById('src-panel'),cb=document.getElementById('src-col-btn'),eb=document.getElementById('src-exp-btn');
+  if(srcPanelState==='collapsed'){p.classList.remove('collapsed');srcPanelState='normal';cb.textContent='◀';eb.style.display='flex';}
+  else{p.classList.remove('expanded');p.classList.add('collapsed');srcPanelState='collapsed';cb.textContent='▶';eb.style.display='none';}
+}
+function expandSrcPanel() {
+  const p=document.getElementById('src-panel'),eb=document.getElementById('src-exp-btn');
+  if(srcPanelState==='expanded'){p.classList.remove('expanded');srcPanelState='normal';eb.textContent='⤢';}
+  else{p.classList.remove('collapsed');p.classList.add('expanded');srcPanelState='expanded';eb.textContent='⤡';document.getElementById('src-col-btn').textContent='◀';}
+}
+function toggleSvPanel() {
+  const p=document.getElementById('sv-panel'),cb=document.getElementById('sv-col-btn'),eb=document.getElementById('sv-exp-btn');
+  if(svPanelState==='collapsed'){p.classList.remove('collapsed');svPanelState='normal';cb.textContent='▶';eb.style.display='flex';}
+  else{p.classList.remove('expanded');p.classList.add('collapsed');svPanelState='collapsed';cb.textContent='◀';eb.style.display='none';}
+}
+function expandSvPanel() {
+  const p=document.getElementById('sv-panel'),eb=document.getElementById('sv-exp-btn');
+  if(svPanelState==='expanded'){p.classList.remove('expanded');svPanelState='normal';eb.textContent='⤢';}
+  else{p.classList.remove('collapsed');p.classList.add('expanded');svPanelState='expanded';eb.textContent='⤡';document.getElementById('sv-col-btn').textContent='▶';}
+}
+</script>
+</body>
+</html>
